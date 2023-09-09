@@ -16,7 +16,6 @@ router = APIRouter(prefix="/chat", tags=["chat"])
 
 class ChatRequest(BaseModel):
     file_id: UUID
-    file_type: FileType
     query: str
 
 
@@ -28,7 +27,6 @@ async def get_response(
     bot = MLBot(
         user_id=user_id,
         file_id=request.file_id,
-        file_type=request.file_type,
     )
 
     answer = await bot.query_file(query=request.query)
