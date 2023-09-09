@@ -8,6 +8,8 @@ from uuid import uuid4
 
 import docker
 
+from mlbot.utils import load_exec_code
+
 
 class DockerExecutor:
     """Handles Docker operations for executing Python code."""
@@ -27,17 +29,9 @@ class DockerExecutor:
         data = json.dumps({"code": code, "kwargs": {"df": "/tmp/data.parquet"}})
 
         # Prepare the Python code to read the DataFrame and execute the given code
-        python_execution_code = f"""
-import pandas as pd
-import json
-df = pd.read_parquet("/tmp/data.parquet")
-data = json.loads('{data}')
-if "\\n" in data["code"] or "=" in data["code"]:
-    exec(data["code"])
-else:
-    result = eval(data["code"])
-    print(result)
-"""
+        python_execution_code = load_exec_code("DockerExecutor.run").replace(
+            "{data}", data
+        )
 
         # Use docker-py to run the Docker container
         logs = self.client.containers.run(

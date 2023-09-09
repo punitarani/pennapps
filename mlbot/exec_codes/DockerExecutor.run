@@ -1,0 +1,9 @@
+import pandas as pd
+import json
+df = pd.read_parquet("/tmp/data.parquet")
+data = json.loads('{data}')
+if "\\n" in data["code"] or "=" in data["code"]:
+    exec(data["code"])
+else:
+    result = eval(data["code"])
+    print(result)
