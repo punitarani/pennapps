@@ -2,16 +2,14 @@
 
 import json
 from copy import deepcopy
-from pathlib import Path
 from uuid import UUID
 
 import openai
 import pandas as pd
 
-from config import DATA_DIR
 from mlbot.docker import DockerExecutor
 from mlbot.errors import DataNotAvailable
-from mlbot.models import FileType
+from mlbot.store import StorageBucket
 from mlbot.utils import load_prompts, load_prompt_messages, load_prompt_functions
 
 PROMPTS = load_prompts()
@@ -19,12 +17,13 @@ PROMPT_MESSAGES = load_prompt_messages()
 PROMPT_FUNCTIONS = load_prompt_functions()
 
 
+bucket = StorageBucket("user-data")
+
+
 class MLBot:
     """ML Bot"""
 
-    def __init__(
-        self, user_id: UUID, file_id: UUID, file_type: FileType = FileType.CSV
-    ) -> None:
+    def __init__(self, user_id: UUID, file_id: UUID) -> None:
         """
         Initialize ML Bot.
 
@@ -35,20 +34,19 @@ class MLBot:
 
         self.user_id = str(user_id)
         self.file_id = str(file_id)
-        self.file_type = file_type
-        if self.file_type in [FileType.CSV]:
-            self.data = self.load_file()
+
+        self.data = self.load_file()
 
     @property
-    def filepath(self) -> Path:
+    def filepath(self) -> str:
         """
         Return the CSV file path.
 
         Returns:
-            str: CSV file path
+            str: Parquet file path in the storage bucket
         """
 
-        return DATA_DIR.joinpath("users", self.user_id, f"{self.file_id}.parquet")
+        return f"{self.user_id}/{self.file_id}.parquet"
 
     def load_file(self) -> pd.DataFrame:
         """
@@ -58,8 +56,9 @@ class MLBot:
             pd.DataFrame: File data
         """
 
-        if self.file_type == FileType.CSV:
-            return pd.read_parquet(self.filepath)
+        if bucket.file_exists(self.user_id, f"{self.file_id}.parquet"):
+            file = bucket.download(self.filepath)
+            return pd.read_parquet(file.name)
         else:
             raise DataNotAvailable(
                 user_id=self.user_id, file_id=self.file_id, file_type=self.file_type
