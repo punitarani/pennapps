@@ -75,3 +75,21 @@ def load_prompt_messages() -> MappingProxyType[str, str]:
         assert message in prompt_messages, f"Message {message} not in messages.json"
 
     return MappingProxyType(json.loads(prompt_messages))
+
+
+def load_exec_code(filename: str) -> str:
+    """
+    Load the Python execution code from the given filename.
+
+    Args:
+        filename (str): Name of the file to load the code from.
+
+    Returns:
+        str: Python execution code as a string.
+    """
+
+    code_dir = Path(__file__).parent.joinpath("exec_codes")
+    with open(code_dir.joinpath(filename), "r") as f:
+        code = f.read()
+
+    return code
