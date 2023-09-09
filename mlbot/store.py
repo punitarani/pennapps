@@ -33,7 +33,7 @@ class StorageBucket:
     def download(self, source: str) -> tempfile.NamedTemporaryFile:
         """Download file from bucket to a temporary file and return it."""
         # Create a temporary file
-        temp_file = tempfile.NamedTemporaryFile(delete=True)
+        temp_file = tempfile.NamedTemporaryFile(delete=False)
 
         # Download the file from the Supabase bucket
         res = supabase.storage.from_(self.name).download(source)
