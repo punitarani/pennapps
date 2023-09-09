@@ -1,17 +1,15 @@
 """mlbot.mlbot.py"""
 
 import json
-import os
-import tempfile
 from copy import deepcopy
 from pathlib import Path
-from uuid import UUID, uuid4
+from uuid import UUID
 
-import docker
 import openai
 import pandas as pd
 
 from config import DATA_DIR
+from mlbot.docker import DockerExecutor
 from mlbot.errors import DataNotAvailable
 from mlbot.models import FileType
 from mlbot.utils import load_prompts, load_prompt_messages, load_prompt_functions
@@ -119,44 +117,5 @@ class MLBot:
             str: Execution result
         """
 
-        # Initialize Docker client
-        client = docker.from_env()
-
-        # Serialize the DataFrame to a temporary file
-        with tempfile.NamedTemporaryFile(suffix=".parquet", delete=False) as temp:
-            kwargs["df"].to_parquet(temp.name)
-            temp_file_path = temp.name
-
-        # Convert the code and DataFrame path to JSON
-        data = json.dumps({"code": code, "kwargs": {"df": "/tmp/data.parquet"}})
-
-        # Prepare the Python code to read the DataFrame and execute the given code
-        python_execution_code = f"""
-import pandas as pd
-import json
-df = pd.read_parquet("/tmp/data.parquet")
-data = json.loads('{data}')
-if "\\n" in data["code"] or "=" in data["code"]:
-    exec(data["code"])
-else:
-    result = eval(data["code"])
-    print(result)
-"""
-
-        # Use docker-py to run the Docker container
-        logs = client.containers.run(
-            image="mlbot-sandbox",
-            command=["python", "-c", python_execution_code],
-            volumes={temp_file_path: {"bind": "/tmp/data.parquet", "mode": "ro"}},
-            remove=True,
-            mem_limit="512m",
-            network_mode="none",
-            name=f"PennApps_{uuid4()}",
-            stdout=True,
-            stderr=True,
-        ).decode("utf-8")
-
-        # Cleanup: Remove the temporary file
-        os.remove(temp_file_path)
-
-        return logs
+        executor = DockerExecutor()
+        return executor.run(code, **kwargs)
