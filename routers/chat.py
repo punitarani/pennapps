@@ -6,6 +6,7 @@ from fastapi import FastAPI, APIRouter, Body, Depends
 from pydantic import BaseModel
 
 from dependencies import get_user_id
+from mlbot.models import FileType
 
 app = FastAPI()
 
@@ -14,7 +15,7 @@ router = APIRouter(prefix="/chat", tags=["chat"])
 
 class ChatRequest(BaseModel):
     file_id: UUID
-    file_type: str
+    file_type: FileType
     query: str
 
 
