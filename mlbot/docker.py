@@ -30,11 +30,7 @@ class DockerExecutor:
         # Setup the container with necessary configuration
         self.container = self.client.containers.create(
             image=self.image_name,
-            command=[
-                "python",
-                "-c",
-                "while True: pass",
-            ],  # Infinite loop to keep the container running
+            command=["sleep", "infinity"],
             volumes={self.temp_file_path: {"bind": "/tmp/data.parquet", "mode": "ro"}},
             mem_limit="512m",
             network_mode="none",
