@@ -27,3 +27,31 @@ class MLBot:
         self.user_id = str(user_id)
         self.file_id = str(file_id)
         self.file_type = file_type
+        if self.file_type in [FileType.CSV]:
+            self.data = self.load_file()
+
+    @property
+    def filepath(self) -> Path:
+        """
+        Return the CSV file path.
+
+        Returns:
+            str: CSV file path
+        """
+
+        return DATA_DIR.joinpath(self.user_id, f"{self.file_id}.parquet")
+
+    def load_file(self) -> pd.DataFrame:
+        """
+        Load file.
+
+        Returns:
+            pd.DataFrame: File data
+        """
+
+        if self.file_type == FileType.CSV:
+            return pd.read_parquet(self.filepath)
+        else:
+            raise DataNotAvailable(
+                user_id=self.user_id, file_id=self.file_id, file_type=self.file_type
+            )
