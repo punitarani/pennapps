@@ -10,6 +10,7 @@ packages = [{include = "pennapps_backend"}]
 python = "^3.10"
 fastapi = "^0.103.1"
 uvicorn = "^0.23.2"
+docker = "^6.1.3"
 openai = "^0.28.0"
 pandas = "^2.1.0"
 pyarrow = "^13.0.0"
