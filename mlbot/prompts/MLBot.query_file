@@ -1,0 +1,5 @@
+Given the provided DataFrame summary below, generate a valid pandas command to answer the following task:
+Task: {task}
+
+- Please ensure the command is optimized for performance and avoids common pitfalls.
+- Also make sure to not use any filters or conditions if you are not 100% sure about them.

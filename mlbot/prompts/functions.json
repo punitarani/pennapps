@@ -1,0 +1,20 @@
+{
+  "MLBot.task_to_python": [
+    {
+      "name": "task_to_python",
+      "description": "Convert a task to Python code. It must be valid code and run with no errors. Python version: 3.10",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "python": {
+            "type": "string",
+            "description": "Only the Python code without any surrounding text."
+          }
+        }
+      },
+      "required": [
+        "python"
+      ]
+    }
+  ]
+}
