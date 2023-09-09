@@ -5,7 +5,7 @@ FROM python:3.10-slim
 RUN apt-get update && apt-get upgrade -y
 
 # Install necessary Python libraries
-RUN pip install pandas pyarrow
+RUN pip install pandas pyarrow scikit-learn
 
 # Create a directory for our code
 WORKDIR /app
