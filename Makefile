@@ -13,5 +13,5 @@ format:
 	black mlbot/ routers/
 
 
-docker-build:
+build:
 	docker build -t mlbot-sandbox .

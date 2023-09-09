@@ -1,3 +1,7 @@
+docker
+openai
 pandas
 pyarrow
+python-dotenv
 scikit-learn
+supabase

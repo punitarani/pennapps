@@ -1,17 +1,21 @@
 # Use the official Python image from the DockerHub
-FROM python:3.10-slim
+FROM python:3.10
 
-# Ensure up-to-date system packages
-RUN apt-get update && apt-get upgrade -y
-
-# Copy the requirements file
-COPY requirements.txt /app/requirements.txt
-
-# Install necessary Python libraries
-RUN pip install --no-cache-dir -r /app/requirements.txt
-
-# Create a directory for our code
+# Set working directory in the container
 WORKDIR /app
 
-# By default, run a Python shell (this can be changed based on your needs)
-CMD ["python"]
+# Copy requirements file and install packages
+COPY requirements.txt /requirements.txt
+
+# Install necessary Python libraries and clean up in one layer
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends && \
+    pip install --no-cache-dir -r /requirements.txt
+
+# Copy project files to the working directory
+COPY .env .
+COPY config.py .
+COPY mlbot/ .
+
+# Load the environment variables from .env file and run Python
+CMD export $(grep -v '^#' .env | xargs) && python
