@@ -1,18 +1,33 @@
 """routers.upload.py"""
 
 import io
+import tempfile
 from uuid import uuid4, UUID
 
 import pandas as pd
 from fastapi import FastAPI, APIRouter, Depends, HTTPException, UploadFile
 from fastapi.param_functions import File
 
-from config import DATA_DIR
 from dependencies import get_user_id
+from mlbot.store import StorageBucket
 
 app = FastAPI()
 
 router = APIRouter(prefix="/upload", tags=["upload"])
+
+# Assuming you have a bucket named 'user-data' in Supabase
+BUCKET_NAME = "user-data"
+bucket = StorageBucket(BUCKET_NAME)
+
+
+def upload_df(df: pd.DataFrame, path_in_bucket: str) -> None:
+    """Converts a DataFrame to a Parquet file and uploads it to the Supabase bucket."""
+    with tempfile.NamedTemporaryFile(suffix=".parquet", delete=True) as temp_file:
+        try:
+            df.to_parquet(temp_file.name)
+            bucket.upload(path_in_bucket, temp_file.name)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/csv/")
@@ -35,15 +50,10 @@ async def upload_csv(
     # Create a unique filename
     fn = uuid4()
 
-    # Define the file path
-    user_dir = DATA_DIR.joinpath("users", str(user_id))
-    user_dir.mkdir(parents=False, exist_ok=True)
-    fp = user_dir.joinpath(f"{fn}.parquet")
+    # Define the file path in the bucket
+    file_path_in_bucket = f"{user_id}/{fn}.parquet"
 
-    # Save the DataFrame as a Parquet file
-    try:
-        df.to_parquet(fp)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    # Upload the DataFrame as a Parquet file to the Supabase bucket
+    upload_df(df, file_path_in_bucket)
 
     return fn
