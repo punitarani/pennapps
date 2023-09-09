@@ -64,24 +64,14 @@ class MLBot:
                 user_id=self.user_id, file_id=self.file_id, file_type=self.file_type
             )
 
-    def query_file(self, query: str) -> str:
-        """
-        Query file.
-
-        Args:
-            query (str): Query
-
-        Returns:
-            str: Query result
-        """
-
+    async def query_file(self, query: str) -> str:
         df = deepcopy(self.data)
 
         base_prompt = PROMPTS["MLBot.query_file"]
         messages = [{"role": "user", "content": df.describe().to_string()}]
         functions = PROMPT_FUNCTIONS["MLBot.task_to_python"]
 
-        response = openai.ChatCompletion.create(
+        response = await openai.ChatCompletion.acreate(
             model="gpt-4",
             messages=[
                 {
@@ -109,12 +99,12 @@ class MLBot:
         )["python"]
         kwargs = {"df": df}
 
-        result = self.execute_py(code=python_code, **kwargs)
+        result = await self.execute_py(code=python_code, **kwargs)
 
         return result
 
     @staticmethod
-    def execute_py(code, **kwargs) -> str:
+    async def execute_py(code, **kwargs) -> str:
         """
         Execute Python code.
 
@@ -128,11 +118,9 @@ class MLBot:
 
         local_vars = {**kwargs}
         try:
-            # Attempt to evaluate the code as an expression
+            # If there are other IO-bound operations here, use appropriate async methods
             result = eval(code, {}, local_vars)
         except SyntaxError:
-            # If the code is not an expression (i.e., it's a statement),
-            # then execute it and fetch the 'result' variable if it exists
             exec(code, {}, local_vars)
             result = local_vars.get("result", "Execution completed successfully")
         except Exception as e:
