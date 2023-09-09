@@ -11,3 +11,7 @@ endif
 format:
 	black main.py
 	black mlbot/ routers/
+
+
+docker-build:
+	docker build -t mlbot-sandbox .
