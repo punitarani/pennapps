@@ -1,9 +1,13 @@
 """mlbot.mlbot.py"""
 
 import json
+import os
+import subprocess
+import tempfile
 from copy import deepcopy
 from pathlib import Path
-from uuid import UUID
+
+from uuid import UUID, uuid4
 
 import openai
 import pandas as pd
@@ -106,7 +110,7 @@ class MLBot:
     @staticmethod
     async def execute_py(code, **kwargs) -> str:
         """
-        Execute Python code.
+        Execute Python code inside a Docker container.
 
         Args:
             code (str): Python code to be executed
@@ -116,14 +120,55 @@ class MLBot:
             str: Execution result
         """
 
-        local_vars = {**kwargs}
-        try:
-            # If there are other IO-bound operations here, use appropriate async methods
-            result = eval(code, {}, local_vars)
-        except SyntaxError:
-            exec(code, {}, local_vars)
-            result = local_vars.get("result", "Execution completed successfully")
-        except Exception as e:
-            result = str(e)
+        # Serialize the DataFrame to a temporary file
+        with tempfile.NamedTemporaryFile(suffix=".parquet", delete=False) as temp:
+            kwargs["df"].to_parquet(temp.name)
+            temp_file_path = temp.name
 
-        return result
+        # Convert the code and kwargs to JSON
+        data = json.dumps({"code": code, "kwargs": {"df": "/tmp/data.parquet"}})
+
+        # Prepare the Python code to read the DataFrame and execute the given code
+        python_execution_code = f"""
+import pandas as pd
+import json
+df = pd.read_parquet("/tmp/data.parquet")
+data = json.loads('{data}')
+if "\\n" in data["code"] or "=" in data["code"]:
+    exec(data["code"])
+else:
+    result = eval(data["code"])
+    print(result)
+"""
+
+        # Execute the Docker command
+        docker_command = [
+            "docker",
+            "run",
+            "--rm",
+            "--name",
+            f"PennApps_{uuid4()}",
+            "--network",
+            "none",
+            "--memory",
+            "512m",
+            "--cpus",
+            "1",
+            "-v",
+            f"{temp_file_path}:/tmp/data.parquet",
+            "mlbot-sandbox",
+            "python",
+            "-c",
+            python_execution_code,
+        ]
+
+        result = subprocess.run(docker_command, capture_output=True, text=True)
+
+        # Cleanup: Remove the temporary file
+        os.remove(temp_file_path)
+
+        # If there's an error in the Docker command or the Python code, it'll be in stderr
+        if result.stderr:
+            return result.stderr
+
+        return result.stdout
