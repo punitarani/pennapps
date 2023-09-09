@@ -1,8 +1,9 @@
 """mlbot.store.py"""
 
+import os
+import tempfile
 
 from mlbot import supabase
-import tempfile
 
 
 class StorageBucket:
@@ -32,8 +33,13 @@ class StorageBucket:
 
     def download(self, source: str) -> tempfile.NamedTemporaryFile:
         """Download file from bucket to a temporary file and return it."""
-        # Create a temporary file
-        temp_file = tempfile.NamedTemporaryFile(delete=False)
+        # Determine the project root
+        project_root = os.path.dirname(os.path.abspath(__file__))
+        temp_dir = os.path.join(project_root, "temp")
+        os.makedirs(temp_dir, exist_ok=True)
+
+        # Create a temporary file in the specified directory
+        temp_file = tempfile.NamedTemporaryFile(delete=False, dir=temp_dir)
 
         # Download the file from the Supabase bucket
         res = supabase.storage.from_(self.name).download(source)
