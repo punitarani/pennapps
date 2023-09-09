@@ -2,10 +2,13 @@
 
 from uuid import uuid4, UUID
 
-from fastapi import FastAPI, APIRouter, HTTPException, UploadFile
+from fastapi import FastAPI, APIRouter, Depends, HTTPException, UploadFile
 from fastapi.param_functions import File
 
 from config import DATA_DIR
+
+from dependencies import get_user_id
+
 
 app = FastAPI()
 
@@ -13,7 +16,9 @@ router = APIRouter(prefix="/upload", tags=["upload"])
 
 
 @router.post("/csv/")
-async def upload_csv(user_id: UUID, file: UploadFile = File(...)) -> UUID:
+async def upload_csv(
+    file: UploadFile = File(...), user_id: UUID = Depends(get_user_id)
+) -> UUID:
     # Check if the uploaded file is a CSV
     if not file.filename.endswith(".csv"):
         raise HTTPException(
