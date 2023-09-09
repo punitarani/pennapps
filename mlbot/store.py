@@ -13,6 +13,17 @@ class StorageBucket:
         self.name = name
         self.bucket = supabase.storage.get_bucket(name)
 
+    def file_exists(self, folder: str, filename: str) -> bool:
+        """
+        Check if file exists in bucket.
+        :param folder: Folder path excluding the bucket name
+        :param filename: File name including the extension in the folder
+        """
+        return any(
+            file.get("name") == filename
+            for file in supabase.storage.from_(self.name).list(folder)
+        )
+
     def upload(self, source: str, destination: str):
         """Upload file to bucket"""
         with open(source, "rb+") as file:
