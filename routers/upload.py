@@ -36,7 +36,7 @@ async def upload_csv(
     fn = uuid4()
 
     # Define the file path
-    user_dir = DATA_DIR.joinpath(str(user_id))
+    user_dir = DATA_DIR.joinpath("users", str(user_id))
     user_dir.mkdir(parents=False, exist_ok=True)
     fp = user_dir.joinpath(f"{fn}.parquet")
 
