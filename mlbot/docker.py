@@ -1,6 +1,5 @@
 """mlbot.docker.py"""
 
-
 import json
 import os
 import tempfile
@@ -18,13 +17,45 @@ class DockerExecutor:
         self.client = docker.from_env()
         self.image_name = image_name
         self.container_name = container_name or f"PennApps_{uuid4()}"
+        self.container = None
 
-    def run(self, code, df):
+        self.temp_file_path = None
+
+    def create(self, df):
         # Serialize the DataFrame to a temporary file
         with tempfile.NamedTemporaryFile(suffix=".parquet", delete=False) as temp:
             df.to_parquet(temp.name)
-            temp_file_path = temp.name
+            self.temp_file_path = temp.name
 
+        # Setup the container with necessary configuration
+        self.container = self.client.containers.create(
+            image=self.image_name,
+            command=[
+                "python",
+                "-c",
+                "while True: pass",
+            ],  # Infinite loop to keep the container running
+            volumes={self.temp_file_path: {"bind": "/tmp/data.parquet", "mode": "ro"}},
+            mem_limit="512m",
+            network_mode="none",
+            name=self.container_name,
+        )
+
+    def start(self):
+        # Start the container
+        self.container.start()
+
+    def stop(self):
+        # Stop the container
+        self.container.stop()
+
+        # Cleanup: Remove the temporary file
+        os.remove(self.temp_file_path)
+
+        # Remove the container
+        self.container.remove()
+
+    def execute(self, code):
         # Convert the code and DataFrame path to JSON
         data = json.dumps({"code": code, "kwargs": {"df": "/tmp/data.parquet"}})
 
@@ -33,20 +64,7 @@ class DockerExecutor:
             "{data}", data
         )
 
-        # Use docker-py to run the Docker container
-        logs = self.client.containers.run(
-            image=self.image_name,
-            command=["python", "-c", python_execution_code],
-            volumes={temp_file_path: {"bind": "/tmp/data.parquet", "mode": "ro"}},
-            remove=True,
-            mem_limit="512m",
-            network_mode="none",
-            name=self.container_name,
-            stdout=True,
-            stderr=True,
-        ).decode("utf-8")
+        # Execute the command in the running container
+        _, logs = self.container.exec_run(["python", "-c", python_execution_code])
 
-        # Cleanup: Remove the temporary file
-        os.remove(temp_file_path)
-
-        return logs
+        return logs.decode("utf-8")

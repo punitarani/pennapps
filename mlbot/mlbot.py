@@ -117,4 +117,9 @@ class MLBot:
         """
 
         executor = DockerExecutor()
-        return executor.run(code, **kwargs)
+        executor.create(kwargs["df"])
+        executor.start()
+        logs = executor.execute(code)
+        executor.stop()
+
+        return logs
