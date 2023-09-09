@@ -2,13 +2,12 @@
 
 import json
 import os
-import subprocess
 import tempfile
 from copy import deepcopy
 from pathlib import Path
-
 from uuid import UUID, uuid4
 
+import docker
 import openai
 import pandas as pd
 
@@ -110,7 +109,7 @@ class MLBot:
     @staticmethod
     async def execute_py(code, **kwargs) -> str:
         """
-        Execute Python code inside a Docker container.
+        Execute Python code inside a Docker container using docker-py.
 
         Args:
             code (str): Python code to be executed
@@ -120,12 +119,15 @@ class MLBot:
             str: Execution result
         """
 
+        # Initialize Docker client
+        client = docker.from_env()
+
         # Serialize the DataFrame to a temporary file
         with tempfile.NamedTemporaryFile(suffix=".parquet", delete=False) as temp:
             kwargs["df"].to_parquet(temp.name)
             temp_file_path = temp.name
 
-        # Convert the code and kwargs to JSON
+        # Convert the code and DataFrame path to JSON
         data = json.dumps({"code": code, "kwargs": {"df": "/tmp/data.parquet"}})
 
         # Prepare the Python code to read the DataFrame and execute the given code
@@ -141,34 +143,20 @@ else:
     print(result)
 """
 
-        # Execute the Docker command
-        docker_command = [
-            "docker",
-            "run",
-            "--rm",
-            "--name",
-            f"PennApps_{uuid4()}",
-            "--network",
-            "none",
-            "--memory",
-            "512m",
-            "--cpus",
-            "1",
-            "-v",
-            f"{temp_file_path}:/tmp/data.parquet",
-            "mlbot-sandbox",
-            "python",
-            "-c",
-            python_execution_code,
-        ]
-
-        result = subprocess.run(docker_command, capture_output=True, text=True)
+        # Use docker-py to run the Docker container
+        logs = client.containers.run(
+            image="mlbot-sandbox",
+            command=["python", "-c", python_execution_code],
+            volumes={temp_file_path: {"bind": "/tmp/data.parquet", "mode": "ro"}},
+            remove=True,
+            mem_limit="512m",
+            network_mode="none",
+            name=f"PennApps_{uuid4()}",
+            stdout=True,
+            stderr=True,
+        ).decode("utf-8")
 
         # Cleanup: Remove the temporary file
         os.remove(temp_file_path)
 
-        # If there's an error in the Docker command or the Python code, it'll be in stderr
-        if result.stderr:
-            return result.stderr
-
-        return result.stdout
+        return logs
