@@ -15,17 +15,15 @@ app = FastAPI()
 
 router = APIRouter(prefix="/upload", tags=["upload"])
 
-# Assuming you have a bucket named 'user-data' in Supabase
-BUCKET_NAME = "user-data"
-bucket = StorageBucket(BUCKET_NAME)
+bucket = StorageBucket("user-data")
 
 
 def upload_df(df: pd.DataFrame, path_in_bucket: str) -> None:
     """Converts a DataFrame to a Parquet file and uploads it to the Supabase bucket."""
-    with tempfile.NamedTemporaryFile(suffix=".parquet", delete=True) as temp_file:
+    with tempfile.NamedTemporaryFile(suffix=".parquet", delete=False) as temp_file:
         try:
             df.to_parquet(temp_file.name)
-            bucket.upload(path_in_bucket, temp_file.name)
+            bucket.upload(source=temp_file.name, destination=path_in_bucket)
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
 

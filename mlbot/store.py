@@ -16,7 +16,8 @@ class StorageBucket:
     def upload(self, source: str, destination: str):
         """Upload file to bucket"""
         with open(source, "rb+") as file:
-            supabase.storage.from_(self.name).upload(destination, file)
+            file_bytes = file.read()
+            supabase.storage.from_(self.name).upload(destination, file_bytes)
 
     def download(self, source: str) -> tempfile.NamedTemporaryFile:
         """Download file from bucket to a temporary file and return it."""
