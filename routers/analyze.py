@@ -3,12 +3,10 @@
 import base64
 from uuid import UUID
 
-from fastapi import FastAPI, APIRouter, Body, Depends
+from fastapi import APIRouter, Body, Depends
 
 from dependencies import get_user_id
 from mlbot.agent import analyze_file, analyze_ml_models, df_query
-
-app = FastAPI()
 
 router = APIRouter(prefix="/analyze", tags=["analyze"])
 

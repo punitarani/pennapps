@@ -2,18 +2,15 @@
 
 from uuid import UUID
 
-from fastapi import FastAPI, APIRouter, Body, Depends
-from pydantic import BaseModel
+from fastapi import APIRouter, Body, Depends
 
 from dependencies import get_user_id
 from mlbot.agent import chat
 
-app = FastAPI()
-
 router = APIRouter(prefix="/chat", tags=["chat"])
 
 
-@app.get("/{file_id}")
+@router.get("/{file_id}")
 async def _chat(
     file_id: UUID,
     query: str = Body(..., description="User's query to be answered by the AI agent."),

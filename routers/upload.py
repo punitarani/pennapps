@@ -4,13 +4,11 @@ import io
 from uuid import uuid4, UUID
 
 import pandas as pd
-from fastapi import FastAPI, APIRouter, Depends, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, HTTPException, UploadFile
 from fastapi.param_functions import File
 
 from config import DATA_DIR
 from dependencies import get_user_id
-
-app = FastAPI()
 
 router = APIRouter(prefix="/upload", tags=["upload"])
 
