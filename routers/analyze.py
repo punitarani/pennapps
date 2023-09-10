@@ -62,7 +62,7 @@ async def _analyze_ml_models(
     return vals
 
 
-@router.get("/df-query/{file_id}")
+@router.post("/df-query/{file_id}")
 async def _df_query(
     file_id: UUID,
     query: str = Body(

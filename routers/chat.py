@@ -10,7 +10,7 @@ from mlbot.agent import chat
 router = APIRouter(prefix="/chat", tags=["chat"])
 
 
-@router.get("/{file_id}")
+@router.post("/{file_id}")
 async def _chat(
     file_id: UUID,
     query: str = Body(..., description="User's query to be answered by the AI agent."),
