@@ -46,8 +46,10 @@ async def analyze_ml_models(filepath: str) -> list[CodeInterpreterResponse]:
             "Feel free to iterate through different models and hyperparameters. "
             "You need to answer step-by-step how you built the models and why you chose them. "
             "You are given memory and you therefore do not need to worry about solving the problem in one go. "
-            "Only once you are satisfied with the results, return only '<DONE>' as the answer."
             "However, you are only given {STEPS} steps to solve this problem. This is step {STEP}."
+            "\nPrevious steps to build on top of:\n{PREVIOUS_STEPS}\n\n"
+            "Do not repeat yourself. Make sure each step is unique and adds value to the solution."
+            "If you are not satisfied with the results, only return 'DONE!' to end the session."
         )
 
         files = [
@@ -58,13 +60,23 @@ async def analyze_ml_models(filepath: str) -> list[CodeInterpreterResponse]:
         response = ""
         max_steps = 12
         step = 0
-        while "<DONE>" not in response and step < max_steps:
-            step += 1
+        while "DONE!" not in response and step < max_steps:
             # generate the response
             response = await session.agenerate_response(
-                user_request.format(STEPS=max_steps, STEP=step), files=files
+                user_request.format(
+                    STEPS=max_steps,
+                    STEP=step,
+                    PREVIOUS_STEPS="\n".join([r.content for r in responses]),
+                ),
+                files=files,
             )
+
+            resp = response.content
+            if resp.lower().startswith("sorry"):
+                continue
+
             responses.append(response)
+            step += 1
 
             # Output to the user
             # print("AI: ", response.content)
