@@ -1,5 +1,7 @@
 """mlbot.agent.py"""
 
+import asyncio
+
 from codeinterpreterapi import CodeInterpreterSession, File
 from codeinterpreterapi.schema import CodeInterpreterResponse
 from dotenv import load_dotenv
@@ -70,6 +72,7 @@ async def analyze_ml_models(filepath: str) -> list[CodeInterpreterResponse]:
                 ),
                 files=files,
             )
+            await asyncio.sleep(20)
 
             resp = response.content
             if resp.lower().startswith("sorry"):
@@ -84,3 +87,23 @@ async def analyze_ml_models(filepath: str) -> list[CodeInterpreterResponse]:
             #     file.show_image()
 
         return responses
+
+
+async def df_query(filepath: str, query: str) -> str:
+    """Query a DataFrame using pandas and return the result as a string."""
+
+    async with CodeInterpreterSession() as session:
+        # define the user request
+        user_request = f"Execute the following pandas query on the dataframe in the file '{filepath}':\n\n{query}"
+
+        files = [
+            File.from_path(filepath),
+        ]
+
+        # generate the response
+        response = await session.agenerate_response(user_request, files=files)
+
+        # Extract the result from the response
+        result = response.content
+
+        return result

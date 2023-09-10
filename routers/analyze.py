@@ -1,14 +1,12 @@
 """routers.analyze.py"""
 
 import base64
-import io
 from uuid import UUID
 
-import matplotlib.pyplot as plt
-from fastapi import FastAPI, APIRouter, Depends
+from fastapi import FastAPI, APIRouter, Body, Depends
 
 from dependencies import get_user_id
-from mlbot.agent import analyze_file, analyze_ml_models
+from mlbot.agent import analyze_file, analyze_ml_models, df_query
 
 app = FastAPI()
 
@@ -64,3 +62,15 @@ async def _analyze_ml_models(
         )
 
     return vals
+
+
+@router.get("/df-query/{file_id}")
+async def _df_query(
+    file_id: UUID,
+    query: str = Body(
+        ..., description="The pandas query to be executed on the dataframe."
+    ),
+    user_id: UUID = Depends(get_user_id),
+):
+    response = await df_query(f"data/users/{user_id}/{file_id}.parquet", query)
+    return {"answer": response}
