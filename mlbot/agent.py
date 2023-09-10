@@ -9,8 +9,8 @@ from config import PROJECT_DIR
 load_dotenv(PROJECT_DIR.joinpath(".env"))
 
 
-def analyze_file(filepath: str) -> tuple[str, list[File]]:
-    with CodeInterpreterSession() as session:
+async def analyze_file(filepath: str) -> tuple[str, list[File]]:
+    async with CodeInterpreterSession() as session:
         # define the user request
         user_request = (
             "Explore the dataset and analyze the data. Concisely summarize the data and their features. "
@@ -23,7 +23,7 @@ def analyze_file(filepath: str) -> tuple[str, list[File]]:
         ]
 
         # generate the response
-        response = session.generate_response_sync(user_request, files=files)
+        response = await session.agenerate_response(user_request, files=files)
 
         # Output to the user
         # print("AI: ", response.content)
