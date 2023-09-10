@@ -107,3 +107,23 @@ async def df_query(filepath: str, query: str) -> str:
         result = response.content
 
         return result
+
+
+async def chat(filepath: str, user_request: str) -> str:
+    base_guidelines = (
+        "Please provide a clear and concise request related to the dataset. "
+        "You can ask for data exploration, machine learning model building, "
+        "or any specific query related to the dataset. Ensure your query is "
+        "well-defined to get the best results."
+    )
+
+    # Prepend the base guidelines to the user's request
+    full_request = base_guidelines + "\n\n" + user_request
+
+    async with CodeInterpreterSession() as session:
+        files = [File.from_path(filepath)]
+
+        # Generate the response
+        response = await session.agenerate_response(full_request, files=files)
+
+        return response.content
