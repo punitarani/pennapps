@@ -1,6 +1,7 @@
 """routers.upload.py"""
 
 import io
+from pathlib import Path
 from uuid import uuid4, UUID
 
 import pandas as pd
@@ -15,6 +16,7 @@ router = APIRouter(prefix="/upload", tags=["upload"])
 
 def upload_df(df: pd.DataFrame, filepath: str) -> None:
     """Converts a DataFrame to a Parquet file and uploads it to the Supabase bucket."""
+    Path(filepath).parent.mkdir(parents=True, exist_ok=True)
     df.to_parquet(filepath)
 
 
